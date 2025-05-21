@@ -26,7 +26,7 @@ export const AuthProvider = ({ children }) => {
   // jwt authentication of the user data
   const userauthentication = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/auth/User', {
+      const response = await fetch('https://backend-1-z82m.onrender.com/api/auth/User', {
         method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -48,7 +48,7 @@ export const AuthProvider = ({ children }) => {
   // Fetch mentees from the database
   const getMentees = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/data/mentees');
+      const response = await fetch('https://backend-1-z82m.onrender.com/api/data/mentees');
       if (response.ok) {
         const data = await response.json();
         console.log(data.msg);

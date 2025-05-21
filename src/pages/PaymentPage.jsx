@@ -14,7 +14,7 @@ function PaymentPage() {
     if (!bookingData) return;
 
     // STEP 1: Call backend to create Razorpay order
-    const orderResponse = await fetch("http://localhost:5000/api/bookings/create-payment-order", {
+    const orderResponse = await fetch("https://backend-1-z82m.onrender.com/api/bookings/create-payment-order", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ menteeId: bookingData.menteeId }),
@@ -32,7 +32,7 @@ function PaymentPage() {
       order_id: order.id,
       handler: async function (response) {
         // STEP 3: On successful payment, call backend to save booking + Zoom
-        const res = await fetch("http://localhost:5000/api/bookings/book-session", {
+        const res = await fetch("https://backend-1-z82m.onrender.com/api/bookings/book-session", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

@@ -31,7 +31,7 @@ const Mentees = () => {
   useEffect(() => {
     const fetchMentees = async () => {
       try {
-        const res = await fetch("http://localhost:8000/api/data/mentees");
+        const res = await fetch("https://backend-1-z82m.onrender.com/api/data/mentees");
         const json = await res.json();
         if (json.success) {
           setMentees(json.data);
