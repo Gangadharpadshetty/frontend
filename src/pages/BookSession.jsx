@@ -4,7 +4,7 @@ import axios from "axios";
 import { useParams } from "react-router-dom";
 import { loadRazorpay } from "../utils/razorpay";
 
-const BookSession = () => {
+const BookSession = () => { 
   const { menteeId } = useParams();
   const [mentee, setMentee] = useState(null);
   const [selectedTime, setSelectedTime] = useState("");
@@ -38,8 +38,9 @@ const BookSession = () => {
             userName: localStorage.getItem("userName") || "Guest",
             userEmail: localStorage.getItem("userEmail") || "guest@email.com",
             selectedTime,
-            razorpayPaymentId: response.razorpay_payment_id,
-            razorpayOrderId: response.razorpay_order_id,
+            razorpayPaymentId: rzp_test_AMiJBC1BX3XWzr,
+            razorpayOrderId:L8gcNLxTUx0rOb4nxUAZzCKx,
+
           });
 
           alert("Booking Confirmed! Zoom Link: " + bookingRes.data.zoomLink);

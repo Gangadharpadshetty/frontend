@@ -1,70 +1,91 @@
-import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-const PaymentPage = () => {
-  const { id } = useParams();
-  const [mentee, setMentee] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [bookingConfirmed, setBookingConfirmed] = useState(false);
+function PaymentPage() {
+  const navigate = useNavigate();
+  const [bookingData, setBookingData] = useState(null);
 
   useEffect(() => {
-    fetch(`/api/data/${id}`)
-      .then((res) => res.json())
-      .then((data) => {
-        setMentee(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error('Error fetching mentee:', err);
-        setLoading(false);
-      });
-  }, [id]);
+    const data = JSON.parse(localStorage.getItem("bookingData"));
+    setBookingData(data);
+  }, []);
 
-  const handleBookSession = async () => {
-    try {
-      const res = await fetch('/api/book', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ menteeId: id }),
-      });
+  const handlePayment = async () => {
+    if (!bookingData) return;
 
-      const data = await res.json();
+    // STEP 1: Call backend to create Razorpay order
+    const orderResponse = await fetch("http://localhost:5000/api/bookings/create-payment-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ menteeId: bookingData.menteeId }),
+    });
 
-      if (data.zoomLink) {
-        setBookingConfirmed(true);
-        window.open(data.zoomLink, '_blank');
-      }
-    } catch (err) {
-      console.error('Booking failed:', err);
-    }
+    const { order } = await orderResponse.json();
+
+    // STEP 2: Launch Razorpay payment window
+    const options = {
+      key: "YOUR_RAZORPAY_KEY_ID",
+      amount: order.amount,
+      currency: "INR",
+      name: "GetPlaced Mentorship",
+      description: "Session Booking",
+      order_id: order.id,
+      handler: async function (response) {
+        // STEP 3: On successful payment, call backend to save booking + Zoom
+        const res = await fetch("http://localhost:5000/api/bookings/book-session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...bookingData,
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpayOrderId: response.razorpay_order_id,
+          }),
+        });
+
+        const result = await res.json();
+        if (res.ok) {
+          alert("Booking successful! Zoom Link: " + result.zoomLink);
+          navigate("/");
+        } else {
+          alert("Booking failed");
+        }
+      },
+      prefill: {
+        name: bookingData.userName,
+        email: bookingData.userEmail,
+      },
+      theme: {
+        color: "#3399cc",
+      },
+      method: {
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true,
+      },
+    };
+
+    const rzp = new window.Razorpay(options);
+    rzp.open();
   };
 
-  if (loading) return <p className="text-center py-10">Loading...</p>;
-  if (!mentee) return <p className="text-center py-10">Mentee not found</p>;
+  if (!bookingData) return <p>Loading booking details...</p>;
 
   return (
-    <section className="py-10 px-4 bg-white min-h-screen">
-      <div className="max-w-xl mx-auto text-center">
-        <h1 className="text-3xl font-bold mb-6">Book Session with {mentee.name}</h1>
-        <img
-          src={mentee.image || '/default-avatar.png'}
-          alt={mentee.name}
-          className="w-32 h-32 rounded-full mx-auto mb-4"
-        />
-        <p className="text-gray-700 mb-2">🧠 {mentee.job_description}</p>
-        <p className="text-gray-900 font-semibold mb-4">💰 ₹{mentee.price_per_hour}/hr</p>
-        <button
-          onClick={handleBookSession}
-          className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700"
-        >
-          Book & Join Zoom Session
-        </button>
-        {bookingConfirmed && (
-          <p className="mt-4 text-green-600 font-medium">Session booked! Zoom link opened in new tab.</p>
-        )}
-      </div>
-    </section>
+    <div className="container">
+      <h2>Complete Your Payment</h2>
+      <p>
+        You're booking a session with mentor ID <b>{bookingData.menteeId}</b>
+      </p>
+      <p>Name: {bookingData.userName}</p>
+      <p>Email: {bookingData.userEmail}</p>
+      <p>Time: {new Date(bookingData.selectedTime).toLocaleString()}</p>
+
+      <button className="button" onClick={handlePayment}>
+        Pay Now via Razorpay
+      </button>
+    </div>
   );
-};
+}
 
 export default PaymentPage;
